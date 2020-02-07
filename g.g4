@@ -44,8 +44,10 @@ INTLITERAL:         Digit+;
 FLOATLITERAL:       Digit+ '.' Digit+
             |       '.' Digit+
             ;
-STRINGLITERAL:      '"' .* '"';     //uncertain
-COMMENT:            '--' .* '\n';   //uncertain
+STRINGLITERAL:      '"' .+? '"';     //uncertain
+COMMENT:            '--' .+? '\n';   //uncertain
+
+WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
 //Fragments
 fragment Letter:            [a-zA-Z];
