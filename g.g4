@@ -40,7 +40,7 @@ GE:             '>=';
 
 //Tokens
 IDENTIFIER:         Letter LetterOrDigit*;
-INTLITERAL:         Digit*;
+INTLITERAL:         Digit+;
 FLOATLITERAL:       Digit+ '.' Digit+
             |       '.' Digit+
             ;
@@ -51,6 +51,7 @@ COMMENT:            '--' .* '\n';   //uncertain
 fragment Letter:            [a-zA-Z];
 fragment Digit:             [0-9];
 fragment LetterOrDigit:     Letter | Digit;
+
 
 //Program
 program:        PROGRAM id BEGIN pgm_body END;
