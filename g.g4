@@ -45,9 +45,9 @@ FLOATLITERAL:       Digit+ '.' Digit+
             |       '.' Digit+
             ;
 STRINGLITERAL:      '"' .+? '"';     //uncertain
-COMMENT:            '--' .+? '\n';   //uncertain
+COMMENT:            '--' ~( '\r' | '\n' )* -> skip;   //uncertain
 
-WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
+WS : [' ' \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
 //Fragments
 fragment Letter:            [a-zA-Z];
@@ -56,17 +56,18 @@ fragment LetterOrDigit:     Letter | Digit;
 
 
 //Program
+
 program:        PROGRAM id BEGIN pgm_body END;
 id:             IDENTIFIER;
 pgm_body:       decl func_declarations;
 decl:           string_decl decl | var_decl decl | empty;
 
 //Global String Declaration
-string_decl:    STRING id ASSIGN str;
+string_decl:    STRING id ASSIGN str SEMI;
 str:            STRINGLITERAL;
 
 //Variable Declaration
-var_decl:       var_type id_list;
+var_decl:       var_type id_list SEMI;
 var_type:       FLOAT | INT;
 any_type:       var_type | VOID;
 id_list:        id id_tail;
@@ -88,11 +89,12 @@ stmt:           base_stmt | if_stmt | while_stmt;
 base_stmt:      assign_stmt | read_stmt | write_stmt | return_stmt;
 
 // Basic Statements
-assign_stmt:    assign_expr;
+assign_stmt:    assign_expr SEMI;
 assign_expr:    id ASSIGN expr;
-read_stmt:      READ LPAREN id_list RPAREN;
-write_stmt:     WRITE LPAREN id_list RPAREN;
-return_stmt:    RETURN expr;
+read_stmt:      READ LPAREN id_list RPAREN SEMI;
+write_stmt:     WRITE LPAREN id_list RPAREN SEMI;
+return_stmt:    RETURN expr SEMI;
+comment_stmt:   COMMENT;
 
 // Expressions
 expr:               expr_prefix factor;
