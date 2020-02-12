@@ -1,23 +1,21 @@
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.Token;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
-/* references:
-    https://howtodoinjava.com/java/io/java-read-file-to-string-examples/
- */
+import java.util.Scanner;
 
 public class Driver {
     public static void main(String[] args){
-        String filePath = "C:/Users/Beckett/IdeaProjects/Compiler/src/loop.micro";
+        String entire = "";
+        Scanner input = new Scanner(System.in);
 
-        //System.out.println( read( filePath ) );
+        input.useDelimiter(System.getProperty("line.separator"));
 
-        String file = read(filePath);
+        while(input.hasNext()) {
+            entire += input.next();
+        }
 
-        gLexer lexer = new gLexer(CharStreams.fromString(file));
+        gLexer lexer = new gLexer(CharStreams.fromString(entire));
 
         List l = lexer.getAllTokens();
         int a = l.size();
@@ -62,22 +60,5 @@ public class Driver {
         } else {
             return "ERROR ERROR ERROR";
         }
-    }
-
-    //reference: https://howtodoinjava.com/java/io/java-read-file-to-string-examples/
-    private static String read(String filePath)
-    {
-        String content = "";
-
-        try
-        {
-            content = new String ( Files.readAllBytes( Paths.get(filePath) ) );
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return content;
     }
 }
