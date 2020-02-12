@@ -1,55 +1,71 @@
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.TokenFactory;
-import org.antlr.v4.runtime.atn.ATN;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-//reference: https://howtodoinjava.com/java/io/java-read-file-to-string-examples/
+/* references:
+    https://howtodoinjava.com/java/io/java-read-file-to-string-examples/
+ */
 
 public class Driver {
     public static void main(String[] args){
-        String filePath = "C:/Users/Beckett/IdeaProjects/Compiler/src/fibonacci.micro";
+        String filePath = "C:/Users/Beckett/IdeaProjects/Compiler/src/loop.micro";
 
-        //System.out.println( readAllBytesJava7( filePath ) );
+        //System.out.println( read( filePath ) );
 
-        String file = readAllBytesJava7(filePath);
+        String file = read(filePath);
 
-
-        System.out.println("hello");
         gLexer lexer = new gLexer(CharStreams.fromString(file));
-        TokenFactory name = lexer.getTokenFactory();
-
-        ATN atn = lexer.getATN();
 
         List l = lexer.getAllTokens();
         int a = l.size();
-
         Token tok;
+        int type;
+
+        // 1 - 18   is KEYWORD
+        // 19 - 33  is OPERATOR
+        // 34       is IDENTIFIER
+        // 35       is INTLITERAL
+        // 36       is FLOATLITERAL
+        // 37       is STRINGLITERAL
+        // 38       is COMMENT
 
         for(int i = 0; i < a; i++){
             tok = (Token) l.get(i);
-            System.out.println(tok.getText());
-            System.out.println(tok.getType());
+            type = tok.getType();
+
+            if (type != 38) {   //skip comments
+                System.out.println("Token Type: " + stringType(type));
+                System.out.println("Value: " + tok.getText());
+            }
         }
 
-        /*
-        tok = lexer.nextToken();
-        System.out.println(tok.getText());
-        System.out.println(tok.getType());
-
-        tok = lexer.nextToken();
-        System.out.println(tok.getText());
-        System.out.println(tok.getType());
-
-        tok = lexer.nextToken();
-        System.out.println(tok.getText());
-        System.out.println(tok.getType());
-        */
     }
-    private static String readAllBytesJava7(String filePath)
+
+    private static String stringType(int in) {
+        if (in > 0 && in <= 18) {
+            return "KEYWORD";
+        } else if (in > 18 && in <= 33) {
+            return "OPERATOR";
+        } else if (in == 34) {
+            return "IDENTIFIER";
+        } else if (in == 35) {
+            return "INTLITERAL";
+        } else if (in == 36) {
+            return "FLOATLITERAL";
+        } else if (in == 37) {
+            return "STRINGLITERAL";
+        } else if (in == 38){
+            return "COMMENT";
+        } else {
+            return "ERROR ERROR ERROR";
+        }
+    }
+
+    //reference: https://howtodoinjava.com/java/io/java-read-file-to-string-examples/
+    private static String read(String filePath)
     {
         String content = "";
 
