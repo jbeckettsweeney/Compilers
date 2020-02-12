@@ -36,7 +36,6 @@ SEMI:           ';';
 COMMA:          ',';
 LE:             '<=';
 GE:             '>=';
-//NULL:           '';     //uncertain
 
 //Tokens
 IDENTIFIER:         Letter LetterOrDigit*;
@@ -120,4 +119,3 @@ while_stmt:     WHILE LPAREN cond RPAREN decl stmt_list ENDWHILE;
 
 //Empty
 empty:      /*empty*/;
-
