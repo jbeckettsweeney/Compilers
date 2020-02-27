@@ -18,7 +18,7 @@ public class Driver {
 
         //Read from input (input is redirected from shell)
         while(input.hasNext()) {
-            entire += input.next() + "\n";
+            entire += input.next() + System.lineSeparator();
         }
 
         //Create lexer to get tokens, then parser full of those tokens
