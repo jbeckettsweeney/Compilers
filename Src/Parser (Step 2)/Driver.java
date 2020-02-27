@@ -16,12 +16,9 @@ public class Driver {
         String entire = "";
         Scanner input = new Scanner(System.in);
 
-        //Add newline between each line for proper formatting
-        input.useDelimiter(System.getProperty("line.separator"));
-
         //Read from input (input is redirected from shell)
         while(input.hasNext()) {
-            entire += input.next();
+            entire += input.next() + "\n";
         }
 
         //Create lexer to get tokens, then parser full of those tokens
@@ -34,12 +31,16 @@ public class Driver {
         parser.addErrorListener(ThrowingErrorListener.INSTANCE);
 
         //Accept or do not accept input
+	
         try {
             parser.program();
             System.out.println("Accepted");
         } catch (ParseCancellationException e) {
             System.out.println("Not accepted");
         }
+	
+	//System.out.println(entire);
+	//parser.program();
 
     }
 }
