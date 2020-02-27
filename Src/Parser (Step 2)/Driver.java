@@ -1,6 +1,7 @@
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
+import java.util.*;
 import java.util.Scanner;
 
 /*
@@ -16,12 +17,14 @@ public class Driver {
         String entire = "";
         Scanner input = new Scanner(System.in);
 
+	//input.useDelimiter(System.getProperty("line.separator"));
+
         //Read from input (input is redirected from shell)
-        while(input.hasNext()) {
-            entire += input.next() + System.lineSeparator();
+        while(input.hasNextLine()) {
+            entire += input.nextLine() + "\n";
         }
 
-        //Create lexer to get tokens, then parser full of those tokens
+	//Create lexer to get tokens, then parser full of those tokens
         GramLexer lexer = new GramLexer(CharStreams.fromString(entire));
         CommonTokenStream stream = new CommonTokenStream(lexer);
         GramParser parser = new GramParser(stream);
@@ -39,6 +42,7 @@ public class Driver {
             System.out.println("Not accepted");
         }
 	
+
 	//System.out.println(entire);
 	//parser.program();
 
