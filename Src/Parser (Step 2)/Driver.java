@@ -37,7 +37,7 @@ public class Driver {
         try {
             parser.program();
             System.out.println("Accepted");
-        } catch (Exception e) {
+        } catch (ParseCancellationException e) {
             System.out.println("Not accepted");
         }
 
