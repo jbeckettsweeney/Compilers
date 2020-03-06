@@ -9,6 +9,6 @@ for i in $INPUTS
 		echo "Testing input file $i"
 		output="${name}Test.out"
 		outtest="${name}.out"
-		bash Micro.sh $i > usertest/$output
+		./Micro.sh $i > usertest/$output
 		diff -B -b -s usertest/$output outputs/$outtest
 	done

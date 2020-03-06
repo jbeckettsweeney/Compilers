@@ -9,10 +9,10 @@ public class Driver {
         String entire = "";
         Scanner input = new Scanner(System.in);
 
-        input.useDelimiter(System.getProperty("line.separator"));
+        //input.useDelimiter(System.getProperty("line.separator"));
 
-        while(input.hasNext()) {
-            entire += input.next();
+        while(input.hasNextLine()) {
+            entire += input.nextLine() + "\n";
         }
 
         gLexer lexer = new gLexer(CharStreams.fromString(entire));

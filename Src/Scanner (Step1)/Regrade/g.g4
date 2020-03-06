@@ -46,7 +46,7 @@ FLOATLITERAL:       Digit+ '.' Digit+
 STRINGLITERAL:      '"' .+? '"';     //uncertain
 COMMENT:            '--' ~( '\r' | '\n' )* -> skip;   //uncertain
 
-WS : [' ' \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
+WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
 //Fragments
 fragment Letter:            [a-zA-Z];

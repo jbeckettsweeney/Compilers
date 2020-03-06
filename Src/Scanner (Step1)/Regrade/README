@@ -2,3 +2,27 @@ This is the folder of our regrading material.
 
 Micro.sh is modified to work on Linux machines and to correctly compile ANTLR files.
 
+g.g4 is modified to no longer have a warning.
+
+Driver.java is modified to properly handle line reading on all machines.
+
+Grading_Script.sh is modified to work for our files.
+
+Process:
+
+Install ANTLR4 and add it to the CLASSPATH.
+
+Put all files in one directory as such:
+
+	inputs/			(directory)
+	outputs/		(directory)
+	Driver.java		(file)
+	g.g4			(file)
+	Grading_Script.sh	(file)
+	Micro.sh		(file)
+	README			(file)
+
+Change Grading_Script.sh and Micro.sh to be executable.
+
+Run $ ./Grading_Script.sh.
+
