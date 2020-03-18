@@ -18,8 +18,6 @@ public class Driver {
         String entire = "";
         Scanner input = new Scanner(System.in);
 
-        //input.useDelimiter(System.getProperty("line.separator"));
-
         //Read from input (input is redirected from shell)
         while(input.hasNextLine()) {
             entire += input.nextLine() + "\n";
@@ -40,8 +38,6 @@ public class Driver {
         //Accept or do not accept input
         try {
             new ParseTreeWalker().walk(listener, parser.program());
-            //System.out.println("Accepted");
-            //System.out.println();
             listener.prettyPrint();
         } catch (ParseCancellationException e) {
             System.out.println("Not accepted");
@@ -53,12 +49,7 @@ class Listener extends GramBaseListener {
     //Type booleans
     private boolean str = false;
     private boolean var = false;
-    private boolean fun = false;
-    //private boolean emp = false;
     private boolean fundec = false;
-    private boolean ifs = false;
-    private boolean els = false;
-    private boolean whi = false;
     private boolean par = false;
 
     //Temp variables
@@ -66,7 +57,7 @@ class Listener extends GramBaseListener {
     private String tType = null;
     private String tValue = null;
 
-    //Count variable
+    //Block count variable
     private int count = 1;
 
     //Create and initialize data structure
@@ -74,7 +65,6 @@ class Listener extends GramBaseListener {
     private ArrayList<Node> inner = new ArrayList<>();
     public Listener() {
         inner.add(new Node("GLOBAL"));
-        //outer.add(inner);
     }
 
     //Function methods
@@ -83,33 +73,10 @@ class Listener extends GramBaseListener {
         outer.add(inner);
 
         inner = new ArrayList<>();
-        fun = true;
 
         tName = null;
         tType = null;
         tValue = null;
-    }
-    @Override
-    public void exitFunc_declarations(GramParser.Func_declarationsContext ctx) {
-        //System.out.println("exiting func declaration");
-        //outer.add(inner);
-        /*
-        if(!emp) {
-            //outer.add(inner);
-        } else {
-            emp = false;
-            fun = false;
-        }
-        */
-    }
-    @Override
-    public void enterEmpty(GramParser.EmptyContext ctx) {
-        /*
-        if(fun) {
-            //System.out.println("empty func declaration");
-            //emp = true;
-        }
-        */
     }
     @Override
     public void enterFunc_decl(GramParser.Func_declContext ctx) {
@@ -122,7 +89,6 @@ class Listener extends GramBaseListener {
         outer.add(inner);
 
         inner = new ArrayList<>();
-        ifs = true;
 
         tName = null;
         tType = null;
@@ -132,17 +98,12 @@ class Listener extends GramBaseListener {
         count++;
     }
     @Override
-    public void exitIf_stmt(GramParser.If_stmtContext ctx) {
-        ifs = false;
-    }
-    @Override
     public void enterElse_part(GramParser.Else_partContext ctx) {
         String t = ctx.getText();
         if(t.equals("") == false) {
             outer.add(inner);
 
             inner = new ArrayList<>();
-            els = true;
 
             tName = null;
             tType = null;
@@ -153,15 +114,10 @@ class Listener extends GramBaseListener {
         }
     }
     @Override
-    public void exitElse_part(GramParser.Else_partContext ctx) {
-        els = false;
-    }
-    @Override
     public void enterWhile_stmt(GramParser.While_stmtContext ctx) {
         outer.add(inner);
 
         inner = new ArrayList<>();
-        whi = true;
 
         tName = null;
         tType = null;
@@ -169,10 +125,6 @@ class Listener extends GramBaseListener {
 
         inner.add(new Node("BLOCK " + count));
         count++;
-    }
-    @Override
-    public void exitWhile_stmt(GramParser.While_stmtContext ctx) {
-        whi = false;
     }
 
     //Parameter methods
@@ -227,9 +179,6 @@ class Listener extends GramBaseListener {
     //ID check
     @Override
     public void enterId(GramParser.IdContext ctx) {
-
-        //System.out.println(ctx.getText());
-
         if(str) {
             tName = ctx.getText();
         } else if(var) {
@@ -244,7 +193,7 @@ class Listener extends GramBaseListener {
         }
     }
 
-    //Print
+    //Print each symbol table
     public void prettyPrint() {
         String result = dupe();
         if(result == null) {
@@ -259,7 +208,7 @@ class Listener extends GramBaseListener {
         }
     }
 
-    //Duplicate check
+    //Checks for duplicates within each scope
     public String dupe() {
         String curType = null;
         String curName = null;
@@ -267,13 +216,11 @@ class Listener extends GramBaseListener {
             for(int j = 0; j < outer.get(i).size(); j++) {
                 curType = outer.get(i).get(j).type;
                 curName = outer.get(i).get(j).name;
-                for(int k = 0; k < outer.get(i).size(); k++) {
+                for(int k = j+1; k < outer.get(i).size(); k++) {
                     if(curName != null && curType != null) {
-                        if(k != j) {
-                            if(curName.equals(outer.get(i).get(k).name)) {
-                                if(curType.equals(outer.get(i).get(k).type)) {
-                                    return curName;
-                                }
+                        if(curName.equals(outer.get(i).get(k).name)) {
+                            if(curType.equals(outer.get(i).get(k).type)) {
+                                return curName;
                             }
                         }
                     }
