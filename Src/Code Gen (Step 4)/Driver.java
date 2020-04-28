@@ -2,6 +2,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Scanner;
 
@@ -74,8 +75,8 @@ class Listener extends GramBaseListener {
     private boolean w = false;          //write
 
     //CodeObject
-    private ArrayList<ArrayList<IRNode>> code = new ArrayList<>();
-    private ArrayList<IRNode> piece = new ArrayList<>();
+    private ArrayList<ArrayList<IRNode>> allCode = new ArrayList<>();
+    private ArrayList<IRNode> block = new ArrayList<>();
 
 
     private int unknowncount = 0;
@@ -109,8 +110,8 @@ class Listener extends GramBaseListener {
     //Statement methods
     @Override
     public void enterBase_stmt(GramParser.Base_stmtContext ctx) {
-        System.out.println("entering base statement");
-        System.out.println("\ttext: " + ctx.getText());
+        //System.out.println("entering base statement");
+        //System.out.println("\ttext: " + ctx.getText());
 
         order += "enterBase_stmt\n";
     }
@@ -216,7 +217,7 @@ class Listener extends GramBaseListener {
                 if (currentNode.hasLeft() && currentNode.hasRight()) {
                     while (!currentNode.value.equals("count") && currentNode.parent != null) {
                         currentNode = currentNode.parent;
-                        System.out.println("CLIMBING UP");
+                        //System.out.println("CLIMBING UP");
                     }
                 }
             }
@@ -264,7 +265,7 @@ class Listener extends GramBaseListener {
                 if (currentNode.hasLeft() && currentNode.hasRight()) {
                     while (!currentNode.value.equals("count") && currentNode.parent != null) {
                         currentNode = currentNode.parent;
-                        System.out.println("CLIMBING UP");
+                        //System.out.println("CLIMBING UP");
                     }
                 }
             }
@@ -300,9 +301,9 @@ class Listener extends GramBaseListener {
         //System.out.println("\t\tadd flag: " + ctx.getText());
         while (!currentNode.value.equals("count") && currentNode.parent != null) {
             currentNode = currentNode.parent;
-            System.out.println("TEST CLIMBING UP");
+            //System.out.println("TEST CLIMBING UP");
         }
-        System.out.println("---setting " + currentNode.value + " to " + ctx.getText());
+        //System.out.println("---setting " + currentNode.value + " to " + ctx.getText());
         currentNode.value = ctx.getText();
 
         order += "enterAddop\n";
@@ -327,9 +328,9 @@ class Listener extends GramBaseListener {
         //System.out.println("\t\tmul flag: " + ctx.getText());
         while (!currentNode.value.equals("count") && currentNode.parent != null) {
             currentNode = currentNode.parent;
-            System.out.println("TEST CLIMBING UP");
+            //System.out.println("TEST CLIMBING UP");
         }
-        System.out.println("---setting " + currentNode.value + " to " + ctx.getText());
+        //System.out.println("---setting " + currentNode.value + " to " + ctx.getText());
         currentNode.value = ctx.getText();
 
         order += "enterMulop\n";
@@ -351,9 +352,13 @@ class Listener extends GramBaseListener {
     //Write methods
     @Override
     public void enterId_tail(GramParser.Id_tailContext ctx) {
-        if (w || r) {
+        if (w) {
             if (!ctx.getText().equals("")) {
-                currentNode = currentNode.add("op", "id");
+                currentNode = currentNode.add("op", "write");
+            }
+        } else if (r) {
+            if (!ctx.getText().equals("")) {
+                currentNode = currentNode.add("op", "read");
             }
         }
     }
@@ -440,11 +445,12 @@ class Listener extends GramBaseListener {
     public void generateIR() {
 
         for (int i = 0; i < currentAST; i++) {
-            System.out.println(nodes.get(i).type);
-            piece = new ArrayList<>();
+            block = nodes.get(i).generate();
+            for (int j = 0; j < block.size(); j++) {
+                block.get(j).print();
+            }
 
-
-            code.add(piece);
+            allCode.add(block);
         }
     }
 
@@ -500,31 +506,160 @@ class IRNode {
         second = inS;
         result = inRes;
     }
+
+    public void print() {
+        System.out.print(opcode + " ");
+        if (first != null) {
+            System.out.print(first + " ");
+        }
+        if (second != null) {
+            System.out.print(second + " ");
+        }
+        if (result != null) {
+            System.out.print(result + " ");
+        }
+        System.out.println();
+    }
 }
 
 class ASTNode {
+    //AST variables
     public String type;
     public String value;
     public ASTNode parent;
     public ASTNode left;
     public ASTNode right;
 
+    //IR variables
+    public static int tempCount = 1;
+    public int coTemp;                  // current temp
+    public int coType;                  // 0 = root | 1 = L-Val | 2 = R-Val
+    public ArrayList<IRNode> coBlock;   // code block
+
     public ASTNode(String inType, String inValue) {
         type = inType;
         value = inValue;
-        //System.out.println("new node created: " + type + ", " + value);
-
         if (type.equals("head")) {
             parent = null;
+            coTemp = -1;
+            //coTemp = tempCount;
+            //tempCount++;
+            coType = 0;
+        } else if (type.equals("id") || type.equals("lit")) {
+            coTemp = -1;
+            coType = 1;
+        } else if (type.equals("op")) {
+            coTemp = -1;
+            //coTemp = tempCount;
+            //tempCount++;
+            coType = 2;
+        } else {
+            coTemp = -1;
+            coType = -1;
+            System.out.println("ERROR ERROR ERROR - coType");
         }
+        //System.out.println("IR -> | te = " + coTemp + " | ty = " + coType);
     }
 
-    public ASTNode upCheck() {
-        if (hasLeft() && hasRight()) {
-            return this.parent;
-        } else {
-            return this;
+    public ArrayList<IRNode> generate() {
+        ArrayList<IRNode> myChunk = new ArrayList<>();
+        ArrayList<IRNode> leftChunk;
+        ArrayList<IRNode> rightChunk;
+
+        //recursively get post-order lists and add to current code block
+        if (hasLeft()) {
+            leftChunk = left.generate();
+            for (int i = 0; i < leftChunk.size(); i++) {
+                myChunk.add(leftChunk.get(i));
+            }
         }
+        if (hasRight()) {
+            rightChunk = right.generate();
+            for (int i = 0; i < rightChunk.size(); i++) {
+                myChunk.add(rightChunk.get(i));
+            }
+        }
+
+        //create current code block
+        if (type.equals("head")) {
+            coType = 0;
+            if (value.equals("assign")) {
+                if (right.coType == 1) {
+                    right.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                }
+                myChunk.add(new IRNode("STORE", ("T" + right.coTemp), null,  left.value));
+            } else if (value.equals("write")) {
+                myChunk.add(0, new IRNode("WRITE", null, null, left.value));
+            } else if (value.equals("read")) {
+                myChunk.add(0, new IRNode("READ", null, null, left.value));
+            }
+        } else if (type.equals("op")) {
+            coTemp = getNewTemp();
+            coType = 2;
+            if (value.equals("+")) {
+                if (left.coType == 1) {
+                    left.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                }
+                if (right.coType == 1) {
+                    right.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                }
+                myChunk.add(new IRNode("ADD", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+            } else if (value.equals("-")) {
+                if (left.coType == 1) {
+                    left.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                }
+                if (right.coType == 1) {
+                    right.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                }
+                myChunk.add(new IRNode("SUB", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+            } else if (value.equals("*")) {
+                if (left.coType == 1) {
+                    left.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                }
+                if (right.coType == 1) {
+                    right.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                }
+                myChunk.add(new IRNode("MUL", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+            } else if (value.equals("/")) {
+                if (left.coType == 1) {
+                    left.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                }
+                if (right.coType == 1) {
+                    right.coTemp = getNewTemp();
+                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                }
+                myChunk.add(new IRNode("DIV", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+            } else if (value.equals("write")) {
+                myChunk.add(0, new IRNode("WRITE", null, null, left.value));
+            } else if (value.equals("read")) {
+                myChunk.add(0, new IRNode("READ", null, null, left.value));
+            } else {
+                System.out.println("ERROR ERROR ERROR - op");
+            }
+
+        } else if (type.equals("id") || type.equals("lit")) {
+            //do nothing
+        } else {
+            //error
+        }
+
+
+
+        return myChunk;
+    }
+
+    public int getNewTemp() {
+        int temp = tempCount;
+        tempCount++;
+        return temp;
     }
 
     public ASTNode add(String t, String v) {
@@ -542,12 +677,12 @@ class ASTNode {
         left = new ASTNode(t, v);
         left.parent = this;
         if (t.equals("op")) {
-            System.out.println("\t\taddleft," + t + v + "//returnleft");
-            System.out.println("CLIMBING DOWN LEFT");
+            //System.out.println("\t\taddleft," + t + v + "//returnleft");
+            //System.out.println("CLIMBING DOWN LEFT");
             return left;
 
         } else {
-            System.out.println("\t\taddleft," + t + v + "//returnTHIS");
+            //System.out.println("\t\taddleft," + t + v + "//returnTHIS");
             return this;
         }
         //return left;
@@ -557,11 +692,11 @@ class ASTNode {
         right = new ASTNode(t, v);
         right.parent = this;
         if (t.equals("op")) {
-            System.out.println("\t\taddright," + t + v + "//returnright");
-            System.out.println("CLIMBING DOWN RIGHT");
+            //System.out.println("\t\taddright," + t + v + "//returnright");
+            //System.out.println("CLIMBING DOWN RIGHT");
             return right;
         } else {
-            System.out.println("\t\taddright," + t + v + "//returnTHIS");
+            //System.out.println("\t\taddright," + t + v + "//returnTHIS");
             return this;
         }
         //return right;
