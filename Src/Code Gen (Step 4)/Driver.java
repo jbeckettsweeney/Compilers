@@ -39,8 +39,8 @@ public class Driver {
         //Accept or do not accept input
         try {
             new ParseTreeWalker().walk(listener, parser.program());
-            listener.prettyPrint();
-            listener.treePrint();
+            //listener.prettyPrint();
+            //listener.treePrint();
             listener.generateIR();
         } catch (ParseCancellationException e) {
             System.out.println("Not accepted");
@@ -78,7 +78,10 @@ class Listener extends GramBaseListener {
     private ArrayList<ArrayList<IRNode>> allCode = new ArrayList<>();
     private ArrayList<IRNode> block = new ArrayList<>();
 
+    //tiny variables
+    private ArrayList<Node> variables= new ArrayList<>();
 
+    //test variables
     private int unknowncount = 0;
     private String order = "";
 
@@ -442,15 +445,110 @@ class Listener extends GramBaseListener {
         //System.out.println(order);
     }
 
+    //fill IRNodes and generate tiny code for each IR line
     public void generateIR() {
-
+        for (int i = 0; i < outer.size(); i++) {
+            for (int j = 0; j < outer.get(i).size(); j++) {
+                outer.get(i).get(j).print();
+                if (outer.get(i).get(j).title == null) {
+                    variables.add(outer.get(i).get(j));
+                }
+            }
+        }
         for (int i = 0; i < currentAST; i++) {
+            nodes.get(i).getVarType(variables);
             block = nodes.get(i).generate();
             for (int j = 0; j < block.size(); j++) {
                 block.get(j).print();
+                generateTiny(block.get(j));
             }
-
+            System.out.println();
             allCode.add(block);
+        }
+    }
+
+    //generate tiny code from single IRNode
+    public void generateTiny(IRNode input) {
+        //input.print();
+        switch (input.opcode) {
+            case "STORE": {
+                System.out.println("move " + input.first + " " + input.result);
+                break;
+            }
+            case "ADD": {
+                if (input.type == 2) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("addi " + input.second + " " + input.result);
+                } else if (input.type == 3) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("addr " + input.second + " " + input.result);
+                } else {
+                    System.out.println("~~~~~~~~~~ERROR~~~~~~~~~~");
+                }
+                break;
+            }
+            case "SUB": {
+                if (input.type == 2) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("subi " + input.second + " " + input.result);
+                } else if (input.type == 3) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("subr " + input.second + " " + input.result);
+                } else {
+                    System.out.println("~~~~~~~~~~ERROR~~~~~~~~~~");
+                }
+                break;
+            }
+            case "MUL": {
+                if (input.type == 2) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("muli " + input.second + " " + input.result);
+                } else if (input.type == 3) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("mulr " + input.second + " " + input.result);
+                } else {
+                    System.out.println("~~~~~~~~~~ERROR~~~~~~~~~~");
+                }
+                break;
+            }
+            case "DIV": {
+                if (input.type == 2) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("divi " + input.second + " " + input.result);
+                } else if (input.type == 3) {
+                    System.out.println("move " + input.first + " " + input.result);
+                    System.out.println("divr " + input.second + " " + input.result);
+                } else {
+                    System.out.println("~~~~~~~~~~ERROR~~~~~~~~~~");
+                }
+                break;
+            }
+            case "WRITE": {
+                if (input.type == 1) {
+                    System.out.println("sys writes " + input.result);
+                } else if (input.type == 2) {
+                    System.out.println("sys writei " + input.result);
+                } else if (input.type == 3) {
+                    System.out.println("sys writer " + input.result);
+                } else {
+                    System.out.println("~~~~~~~~~~ERROR~~~~~~~~~~");
+                }
+                break;
+            }
+            case "READ": {
+                if (input.type == 2) {
+                    System.out.println("sys readi " + input.result);
+                } else if (input.type == 3) {
+                    System.out.println("sys readr " + input.result);
+                } else {
+                    System.out.println("~~~~~~~~~~ERROR~~~~~~~~~~");
+                }
+                break;
+            }
+            default: {
+                System.out.println("ERROR");
+                break;
+            }
         }
     }
 
@@ -499,16 +597,37 @@ class IRNode {
     public String first;
     public String second;
     public String result;
+    public int type;        // 1 = str | 2 = int | 3 = float
 
-    public IRNode(String inOp, String inF, String inS, String inRes) {
+    public IRNode(String inOp, String inF, String inS, String inRes, String inVar) {
         opcode = inOp;
         first = inF;
         second = inS;
         result = inRes;
+        //print();
+        switch (inVar) {
+            case "STRING": {
+                type = 1;
+                break;
+            }
+            case "INT": {
+                type = 2;
+                break;
+            }
+            case "FLOAT": {
+                type = 3;
+                break;
+            }
+            default: {
+                type = 0;
+                System.out.println("ERROR ERROR ERROR ERROR ERROR ERROR");
+                break;
+            }
+        }
     }
 
     public void print() {
-        System.out.print(opcode + " ");
+        System.out.print("\t;" + opcode + " ");
         if (first != null) {
             System.out.print(first + " ");
         }
@@ -531,10 +650,11 @@ class ASTNode {
     public ASTNode right;
 
     //IR variables
-    public static int tempCount = 1;
+    public static int tempCount = 0;
     public int coTemp;                  // current temp
     public int coType;                  // 0 = root | 1 = L-Val | 2 = R-Val
     public ArrayList<IRNode> coBlock;   // code block
+    public String varType;
 
     public ASTNode(String inType, String inValue) {
         type = inType;
@@ -559,6 +679,46 @@ class ASTNode {
             System.out.println("ERROR ERROR ERROR - coType");
         }
         //System.out.println("IR -> | te = " + coTemp + " | ty = " + coType);
+    }
+
+    public String getVarType(ArrayList<Node> v) {
+        //System.out.println("my current value is " + value);
+        String leftVar = "";
+        String rightVar = "";
+        String myVar = "";
+        if (hasLeft()) {
+            leftVar = left.getVarType(v);
+        } else {
+            leftVar = "";
+        }
+        if (hasRight()) {
+            rightVar = right.getVarType(v);
+        } else {
+            rightVar = "";
+        }
+        if (!hasLeft()) {
+            try {
+                int i = Integer.parseInt(value);
+                myVar = "INT";
+            } catch (Exception e) {
+                try {
+                    float f = Float.parseFloat(value);
+                    myVar = "FLOAT";
+                } catch (Exception ee) {
+                    for (int i = 0; i < v.size(); i++) {
+                        //v.get(i).print();
+                        if (v.get(i).name.equals(value)) {
+                            myVar = v.get(i).type;
+                        }
+                    }
+                }
+            }
+        } else {
+            myVar = leftVar;
+        }
+        //System.out.println(type + value + " = " + myVar);
+        varType = myVar;
+        return myVar;
     }
 
     public ArrayList<IRNode> generate() {
@@ -586,13 +746,13 @@ class ASTNode {
             if (value.equals("assign")) {
                 if (right.coType == 1) {
                     right.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                    myChunk.add(new IRNode("STORE", right.value, null, ("r" + right.coTemp), varType));
                 }
-                myChunk.add(new IRNode("STORE", ("T" + right.coTemp), null,  left.value));
+                myChunk.add(new IRNode("STORE", ("r" + right.coTemp), null,  left.value, varType));
             } else if (value.equals("write")) {
-                myChunk.add(0, new IRNode("WRITE", null, null, left.value));
+                myChunk.add(0, new IRNode("WRITE", null, null, left.value, varType));
             } else if (value.equals("read")) {
-                myChunk.add(0, new IRNode("READ", null, null, left.value));
+                myChunk.add(0, new IRNode("READ", null, null, left.value, varType));
             }
         } else if (type.equals("op")) {
             coTemp = getNewTemp();
@@ -600,47 +760,47 @@ class ASTNode {
             if (value.equals("+")) {
                 if (left.coType == 1) {
                     left.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                    myChunk.add(new IRNode("STORE", left.value, null, ("r" + left.coTemp), varType));
                 }
                 if (right.coType == 1) {
                     right.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                    myChunk.add(new IRNode("STORE", right.value, null, ("r" + right.coTemp), varType));
                 }
-                myChunk.add(new IRNode("ADD", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+                myChunk.add(new IRNode("ADD", ("r" + left.coTemp), ("r" + right.coTemp), ("r" + coTemp), varType));
             } else if (value.equals("-")) {
                 if (left.coType == 1) {
                     left.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                    myChunk.add(new IRNode("STORE", left.value, null, ("r" + left.coTemp), varType));
                 }
                 if (right.coType == 1) {
                     right.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                    myChunk.add(new IRNode("STORE", right.value, null, ("r" + right.coTemp), varType));
                 }
-                myChunk.add(new IRNode("SUB", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+                myChunk.add(new IRNode("SUB", ("r" + left.coTemp), ("r" + right.coTemp), ("r" + coTemp), varType));
             } else if (value.equals("*")) {
                 if (left.coType == 1) {
                     left.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                    myChunk.add(new IRNode("STORE", left.value, null, ("r" + left.coTemp), varType));
                 }
                 if (right.coType == 1) {
                     right.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                    myChunk.add(new IRNode("STORE", right.value, null, ("r" + right.coTemp), varType));
                 }
-                myChunk.add(new IRNode("MUL", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+                myChunk.add(new IRNode("MUL", ("r" + left.coTemp), ("r" + right.coTemp), ("r" + coTemp), varType));
             } else if (value.equals("/")) {
                 if (left.coType == 1) {
                     left.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", left.value, null, ("$T" + left.coTemp)));
+                    myChunk.add(new IRNode("STORE", left.value, null, ("r" + left.coTemp), varType));
                 }
                 if (right.coType == 1) {
                     right.coTemp = getNewTemp();
-                    myChunk.add(new IRNode("STORE", right.value, null, ("$T" + right.coTemp)));
+                    myChunk.add(new IRNode("STORE", right.value, null, ("r" + right.coTemp), varType));
                 }
-                myChunk.add(new IRNode("DIV", ("$T" + left.coTemp), ("$T" + right.coTemp), ("$T" + coTemp)));
+                myChunk.add(new IRNode("DIV", ("r" + left.coTemp), ("r" + right.coTemp), ("r" + coTemp), varType));
             } else if (value.equals("write")) {
-                myChunk.add(0, new IRNode("WRITE", null, null, left.value));
+                myChunk.add(0, new IRNode("WRITE", null, null, left.value, varType));
             } else if (value.equals("read")) {
-                myChunk.add(0, new IRNode("READ", null, null, left.value));
+                myChunk.add(0, new IRNode("READ", null, null, left.value, varType));
             } else {
                 System.out.println("ERROR ERROR ERROR - op");
             }
@@ -650,9 +810,6 @@ class ASTNode {
         } else {
             //error
         }
-
-
-
         return myChunk;
     }
 
@@ -784,12 +941,14 @@ class Node {
 
     public void print() {
         if (title != null) {
-            System.out.println("Symbol table " + title);
+            //System.out.println("Symbol table " + title);
         } else {
             if (value != null) {
-                System.out.println("name " + name + " type " + type + " value " + value);
+                //System.out.println("name " + name + " type " + type + " value " + value);
+                System.out.println("str " + name + " " + value);
             } else {
-                System.out.println("name " + name + " type " + type);
+                //System.out.println("name " + name + " type " + type);
+                System.out.println("var " + name);
             }
         }
     }
